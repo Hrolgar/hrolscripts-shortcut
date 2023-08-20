@@ -3,7 +3,7 @@
 HrolScripts is a PowerShell module designed to help automate setting up shortcuts for your projects. It allows users to add shortcuts to frequently visited directories, making navigating your file system quicker and easier. Once a shortcut is added, you can directly navigate to the associated directory using the created function, without having to manually type in the full path.
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
+These instructions will get you a copy of the project up and running on your local machine for development.
 
 ### Prerequisites
 
@@ -66,10 +66,10 @@ Detailed instructions for use. For instance:
 - `HrolScripts --init` to initialize the module and perform the first-time setup.
 - `HrolScripts --add` to add a new shortcut. You will be prompted for the name of the shortcut and the path of the corresponding folder.
 - `HrolScripts --help` to show the help message with all available commands.
+- `HrolScripts --list` to list all shortcuts.
+- `HrolScripts --edit` to edit a shortcut. You will be prompted for the name of the shortcut and the new path of the corresponding folder.
 
-## Running the tests
-
-Automated tests for this project are currently in development.
+If you want to edit the configuration file manually, you can find it at `\User\AppData\Roaming\HrolScripts\hrolconfig.json`.
 
 ## Built With
 
