@@ -31,6 +31,23 @@ To get HrolScripts installed and set up on your local machine, follow these step
     ```powershell
     notepad $PROFILE
     ```
+2.1. **Create a PowerShell profile**
+
+Before you can import the module to your profile, make sure that a profile exists. You can check for a profile using this command in your PowerShell terminal:
+
+```powershell
+Test-Path $PROFILE
+```
+
+This will return `True` if a profile exists, or `False` if it doesn't.
+
+If a profile doesn't exist, create one with this command:
+
+```powershell
+New-Item -path $PROFILE -type file -force
+```
+
+This will create a new profile for you. After running this command, continue with the rest of the steps in the installation.
 
 3. **Import the HrolScripts module**
 
