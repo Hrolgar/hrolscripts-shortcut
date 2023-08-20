@@ -10,7 +10,7 @@ These instructions will get you a copy of the project up and running on your loc
 List what things you need to install the software and how to install them:
 
 Before you begin, you need to have the following installed:
-- [PowerShell](https://aka.ms/powershell-release?tag=stable)
+- [PowerShell 7 or higher](https://aka.ms/powershell-release?tag=stable)
 
 ### Installing
 
