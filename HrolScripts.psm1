@@ -291,6 +291,24 @@ function goToProject {
     }
 }
 
+function goto {
+    param(
+        [string] $Path
+    )
+    
+    if([string]::IsNullOrWhiteSpace($Path)) {
+        Write-Host -ForegroundColor Red "Path cannot be empty."
+        return 
+    }
+    
+    if (Test-Path -LiteralPath $Path) {
+        Set-Location -Path $Path
+    }
+    else {
+        Write-Host -ForegroundColor Red "Path does not exist."
+    }
+}
+
 function CreateFunctionsAndAliases {
     $setupPaths = $global:setupData.SetupPaths | ConvertTo-Json -Depth 99 -Compress | ConvertFrom-Json -AsHashtable
     foreach ($path in $setupPaths.GetEnumerator()) {
