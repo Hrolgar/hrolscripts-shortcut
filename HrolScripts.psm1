@@ -1,10 +1,26 @@
 $setupStatusFilePath = Join-Path $env:APPDATA "HrolScripts\hrolconfig.json"
-if ($alreadyInitialized -eq $true) {
-    Write-Host -ForegroundColor Green "Script successfully reloaded!"
-    return
+
+function LoadSetupData {
+    write-host "Loading setup data from $setupStatusFilePath"
+    return Get-Content -Path $setupStatusFilePath | ConvertFrom-Json
 }
-if ((Test-Path -LiteralPath $setupStatusFilePath) -and ((Get-Content -Path $setupStatusFilePath | ConvertFrom-Json).InitCompleted -eq $true)) {
-    $global:setupData = Get-Content -Path $setupStatusFilePath | ConvertFrom-Json
+
+function SaveSetupData {
+    param($data)
+    $data | ConvertTo-Json -Depth 1 | Set-Content -Path $setupStatusFilePath -Force
+}
+
+function AssertInitialized {
+    if ($global:setupData.InitCompleted -eq $false) {
+        Write-Host -ForegroundColor Red "HrolScripts is not initialized. Type 'HrolScripts --init' to initialize it."
+        $false
+    }
+    $true
+}
+
+
+if ((Test-Path -LiteralPath $setupStatusFilePath) -and ((LoadSetupData).InitCompleted -eq $true)) {
+    $global:setupData = LoadSetupData
     Write-Host -ForegroundColor Green "HrolScripts is Initialized! Welcome back!`n For more information, type 'HrolScripts --help'"
 }
 else {
@@ -14,9 +30,9 @@ else {
     }
     Write-Host -ForegroundColor Yellow "Warning: HrolScripts is not initialized. Type 'HrolScripts --init' to initialize it."
 }
+
 function HrolScripts {
     $command = $args[0]
-
     switch ($command) {
         "--help" {
             Write-Host "Welcome to HrolScripts! This module -------."
@@ -31,13 +47,21 @@ function HrolScripts {
         }
         "--init" {
             Initialize-HrolScripts
+            CreateFunctionsAndAliases
             break
         }
         "--add" {
+            if (-not (AssertInitialized)) {
+                return
+            }
             AddShortcut
+            CreateFunctionsAndAliases
             break
         }
         "--list" {
+            if (-not (AssertInitialized)) {
+                return
+            }
             if ($null -eq $global:setupData.SetupPaths) {
                 Write-Host -ForegroundColor Red "No shortcuts available. You might need to run 'HrolScripts --init' to initialize."
             }
@@ -50,11 +74,19 @@ function HrolScripts {
             break
         }
         "--edit" {
+            if (-not (AssertInitialized)) {
+                return
+            }
             EditShortcut
+            CreateFunctionsAndAliases
             break
         }
         "--remove" {
+            if (-not (AssertInitialized)) {
+                return
+            }
             RemoveShortcut
+            CreateFunctionsAndAliases
             break
         }
         default {
@@ -68,26 +100,25 @@ function HrolScripts {
 function Initialize-HrolScripts {
     if (!(Test-Path -Path $setupStatusFilePath)) {
         # File doesn't exist yet, creating new one
-        New-Item -ItemType File -Path $setupStatusFilePath -Force
+        New-Item -ItemType File -Path $setupStatusFilePath -Force | Out-Null
         # Creating content for the setupStatusFilePath as a hashtable
         $setupFileContent = @{
             "InitCompleted" = $false
             "SetupPaths"    = $null
         }
-        # Converting the hashtable to JSON and writing it in the file
-        $setupFileContent | ConvertTo-Json | Set-Content -Path $setupStatusFilePath
+        
+        SaveSetupData $global:setupFileContent
     }
     $content = Get-Content -Path $setupStatusFilePath | ConvertFrom-Json
     if ($null -eq $content.InitCompleted -or $content.InitCompleted -eq $false) {
         AddShortcut -fromInit $true
         $global:setupData.InitCompleted = $true
-        $global:setupData | ConvertTo-Json -Depth 1 | Set-Content -Path $setupStatusFilePath -Force
+        $global:setupData | ConvertTo-Json -Depth 1 | Set-Content -Path $setupStatusFilePath -Force | Out-Null
         Write-Host -ForegroundColor Green "Welcome to HrolScripts! First time setup completed."
     }
     else {
         Write-Host -ForegroundColor Yellow "HrolScripts is already initialized. If you want to add a new shortcut, type 'HrolScripts --add'"
     }
-    CreateFunctionsAndAliases
 }
 
 function _Setup {
@@ -100,6 +131,7 @@ function _Setup {
     }
     $shortcutPath = Read-Host "Enter the path of the $shortcutName folder"
     if ([string]::IsNullOrWhiteSpace($shortcutPath)) {
+        Write-Error "Shortcut path cannot be empty."  # Use Write-Error to highlight important failures
         return
     }
 
@@ -123,6 +155,9 @@ function AddShortcut {
         return
     }
     elseif ($global:setupData.InitCompleted -eq $true) {
+        if (-not (AssertInitialized)) {
+            return
+        }
         while ($true) {
             _Setup
 
@@ -135,11 +170,14 @@ function AddShortcut {
     else {
         Write-Host -ForegroundColor Red "HrolScripts is not initialized. Type 'HrolScripts --init' to initialize it."
     }
-    $global:setupData | ConvertTo-Json -Depth 1 | Set-Content -Path $setupStatusFilePath -Force
-    $global:setupData = Get-Content -Path $setupStatusFilePath | ConvertFrom-Json
+    SaveSetupData $global:setupData
+    $global:setupData = LoadSetupData
 }
 
 function EditShortcut {
+    if (-not (AssertInitialized)) {
+        return
+    }
     $shortcutAlias = Read-Host "Enter the full name of the shortcut you want to edit"
     if (![string]::IsNullOrWhiteSpace($shortcutAlias)) {
         $shortcutName = $shortcutAlias.Replace('goto-', '')
@@ -261,7 +299,7 @@ function CreateFunctionsAndAliases {
 param([string] `$FolderName)  
 goToProject -projectPath `"$($path.Value)`" -FolderName `$FolderName
 "@
-        New-Item -Path Function:Global:$functionName -Value $functionCode
+        New-Item -Path Function:Global:$functionName -Value $functionCode | Out-Null
         New-Alias -Name "goto-$($path.Name.ToLower())" -Value $functionName -Scope global -Force
     }
 }
