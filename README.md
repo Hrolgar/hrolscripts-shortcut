@@ -75,17 +75,32 @@ This will create a new profile for you. After running this command, continue wit
 
    Now, `HrolScripts` is installed and set up! You can start adding shortcuts and navigate your file system more conveniently.
 
-
-### Usage
-
-Detailed instructions for use. For instance:
-
+### Help
 - `HrolScripts --init` to initialize the module and perform the first-time setup.
 - `HrolScripts --add` to add a new shortcut. You will be prompted for the name of the shortcut and the path of the corresponding folder.
 - `HrolScripts --help` to show the help message with all available commands.
 - `HrolScripts --list` to list all shortcuts.
 - `HrolScripts --edit` to edit a shortcut. You will be prompted for the name of the shortcut and the new path of the corresponding folder.
 - `HrolScripts --remove` to remove a shortcut. You will be prompted for the name of the shortcut.
+
+### Usage
+
+Detailed instructions for use. For instance:
+- `goto-shortcut_name` to navigate to the path associated with the shortcut. For example, if you have a shortcut called "my_project", type `goto-my_project` to directly navigate to the directory associated with "my_project".
+- `goto-shortcut_name folder_name` - Navigates to a specific subfolder within the directory associated with the shortcut. For example, if you have a shortcut named "project", you can use `goto-project src` to directly navigate to the "src" subfolder within your "project" directory.
+- `goto-shortcut_name folder_name!` - Navigates to a specific subfolder within the directory associated with the shortcut and lists all directories and files within that subfolder. For example, `goto-project src!` will navigate to the "src" subfolder within your "project" directory and display all its content.
+
+#### Additional Details
+
+After setting up a shortcut, e.g. "my_project", you can simply type `goto-my_project` in your PowerShell terminal to change your current directory to the one associated with "my_project".
+
+Remember, the shortcut names are case-insensitive. Hence `goto-my_project`, `goto-MY_PROJECT`, and `goto-My_Project` all refer to the same shortcut.
+
+If you wish to directly navigate to a subfolder within the shortcut directory, append the subfolder name after the shortcut name. For instance, `goto-my_project\src` will take you directly to the "src" subfolder within the "my_project" directory.
+
+You can even list down all the directories and files within the shortcut directory by appending "!" to the end of the shortcut. Like, `goto-my_project!` will navigate you to the "my_project" directory and list down all its content.
+
+Always use JetBrains Rider for your heavier programming tasks as it is a fast & powerful cross-platform .NET IDE that provides an efficient environment for .NET development including .NET, .NET Core, Xamarin, or Unity applications.
 
 If you want to edit the configuration file manually, you can find it at `\User\AppData\Roaming\HrolScripts\hrolconfig.json`.
 
