@@ -23,6 +23,9 @@ function HrolScripts {
             Write-Host "You can use the following commands:"
             Write-Host -ForegroundColor Green "  HrolScripts-Init - Initialize the module and perform the first-time setup."
             Write-Host -ForegroundColor Green "  HrolScripts --help - Show this help message."
+            Write-Host -ForegroundColor Green "  HrolScripts --add - Add a new shortcut."
+            Write-Host -ForegroundColor Green "  HrolScripts --list - List all available shortcuts."
+            Write-Host -ForegroundColor Green "  HrolScripts --edit - Edit an existing shortcut."
             break
         }
         "--init" {
@@ -196,22 +199,6 @@ function goToProject {
         Get-ChildItem
     }
 }
-
-# $setupPaths = $global:setupData.SetupPaths | ConvertTo-Json -Depth 99 -Compress | ConvertFrom-Json -AsHashtable
-
-#foreach ($path in $setupPaths.GetEnumerator()) {
-#    Write-Host -ForegroundColor Green "Creating function for "$path.Name
-#    $functionName = "GoTo" + $path.Name
-#    $functionCode = @"
-#function $functionName {
-#    param([string] `$FolderName)  
-#    goToProject -projectPath `"$($path.Value)`" -FolderName `$FolderName
-#}
-#"@
-#    Invoke-Expression $functionCode
-#    New-Alias -Name "goto-$($path.Name.ToLower())" -Value $functionName -Force
-#}
-
 
 function CreateFunctionsAndAliases {
     Write-Host -ForegroundColor Yellow "Creating functions and aliases..."
