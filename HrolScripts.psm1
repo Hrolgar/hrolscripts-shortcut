@@ -33,6 +33,22 @@ function HrolScripts {
             AddShortcut
             break
         }
+        "--list" {
+            if ($null -eq $global:setupData.SetupPaths) {
+                Write-Host -ForegroundColor Red "No shortcuts available. You might need to run 'HrolScripts --init' to initialize."
+            }
+            else {
+                Write-Host -ForegroundColor Cyan "The following shortcuts are available:"
+                foreach ($func in $global:setupData.SetupPaths.psobject.Properties) {
+                    Write-Host -ForegroundColor Cyan "- goto-$($func.Name.ToLower())"
+                }
+            }
+            break
+        }
+        "--edit" {
+            EditShortcut
+            break
+        }
         default {
             # Make the text red
             Write-Host -ForegroundColor Red "Unknown command '$command'. Type 'HrolScripts --help' for help."
@@ -52,7 +68,7 @@ function Initialize-HrolScripts {
     else {
         Write-Host -ForegroundColor Yellow "HrolScripts is already initialized. If you want to add a new shortcut, type 'HrolScripts --add'"
     }
-
+    CreateFunctionsAndAliases
 }
 
 function _Setup {
@@ -104,6 +120,62 @@ function AddShortcut {
     $global:setupData = Get-Content -Path $setupStatusFilePath | ConvertFrom-Json
 }
 
+function EditShortcut {
+    $shortcutAlias = Read-Host "Enter the full name of the shortcut you want to edit"
+    if (![string]::IsNullOrWhiteSpace($shortcutAlias)) {
+        $shortcutName = $shortcutAlias.Replace('goto-', '')
+
+        if ($shortcutName -in $global:setupData.SetupPaths.psobject.Properties.Name) {
+
+            $newShortcutAlias = Read-Host "Enter the new full name of the shortcut (leave empty for no change)"
+            if (![string]::IsNullOrWhiteSpace($newShortcutAlias)) {
+                $newShortcutName = $newShortcutAlias.Replace('goto-', '')
+            } else {
+                $newShortcutName = $shortcutName
+                $newShortcutAlias = $shortcutAlias
+            }
+
+            $editPath = Read-Host "Do you want to edit the path? (y/n)"
+            if ($editPath -eq "y") {
+                $newShortcutPath = Read-Host "Enter the new path of the shortcut"
+            } else {
+                $newShortcutPath = $global:setupData.SetupPaths.$shortcutName
+            }
+
+            if (![string]::IsNullOrWhiteSpace($newShortcutName) -and ![string]::IsNullOrWhiteSpace($newShortcutPath)) {
+                # Remove the old property by creating a new object without it
+                $newSetupPaths = New-Object PSObject -Property @{
+                    $newShortcutName = $newShortcutPath
+                }
+
+                foreach ($prop in $global:setupData.SetupPaths.psobject.Properties) {
+                    if ($prop.Name -ne $shortcutName) {
+                        Add-Member -InputObject $newSetupPaths -Name $prop.Name -Value $prop.Value -MemberType NoteProperty -Force
+                    }
+                }
+
+                $global:setupData.SetupPaths = $newSetupPaths
+
+                # Save to persistent storage
+                $global:setupData | ConvertTo-Json -Depth 1 | Set-Content -Path $setupStatusFilePath -Force
+
+                # Update PowerShell session
+                Remove-Alias -Name "$shortcutAlias"
+                New-Alias -Name "$newShortcutAlias" -Value $newShortcutName -Force
+
+                Write-Host -ForegroundColor Green "Shortcut '$shortcutAlias' has been updated to '$newShortcutAlias'."
+            } else {
+                Write-Host -ForegroundColor Red "New shortcut name or path cannot be empty."
+            }
+        } else {
+            Write-Host -ForegroundColor Red "Shortcut '$shortcutAlias' doesn't exist."
+        }
+    } else {
+        Write-Host -ForegroundColor Red "Shortcut name cannot be empty."
+    }
+    CreateFunctionsAndAliases
+}
+
 function goToProject {
     param(
         [string] $projectPath,
@@ -125,18 +197,34 @@ function goToProject {
     }
 }
 
-$setupPaths = $global:setupData.SetupPaths | ConvertTo-Json -Depth 99 -Compress | ConvertFrom-Json -AsHashtable
+# $setupPaths = $global:setupData.SetupPaths | ConvertTo-Json -Depth 99 -Compress | ConvertFrom-Json -AsHashtable
 
-foreach ($path in $setupPaths.GetEnumerator()) {
-    Write-Host -ForegroundColor Green "Creating function for "$path.Name
-    $functionName = "GoTo" + $path.Name
-    $functionCode = @"
-function $functionName {
-    param([string] `$FolderName)  
-    goToProject -projectPath `"$($path.Value)`" -FolderName `$FolderName
-}
+#foreach ($path in $setupPaths.GetEnumerator()) {
+#    Write-Host -ForegroundColor Green "Creating function for "$path.Name
+#    $functionName = "GoTo" + $path.Name
+#    $functionCode = @"
+#function $functionName {
+#    param([string] `$FolderName)  
+#    goToProject -projectPath `"$($path.Value)`" -FolderName `$FolderName
+#}
+#"@
+#    Invoke-Expression $functionCode
+#    New-Alias -Name "goto-$($path.Name.ToLower())" -Value $functionName -Force
+#}
+
+
+function CreateFunctionsAndAliases {
+    Write-Host -ForegroundColor Yellow "Creating functions and aliases..."
+    $setupPaths = $global:setupData.SetupPaths | ConvertTo-Json -Depth 99 -Compress | ConvertFrom-Json -AsHashtable
+    foreach ($path in $setupPaths.GetEnumerator()) {
+        $functionName = "GoTo" + $path.Name
+        $functionCode = @"
+param([string] `$FolderName)  
+goToProject -projectPath `"$($path.Value)`" -FolderName `$FolderName
 "@
-    Invoke-Expression $functionCode
-    New-Alias -Name "goto-$($path.Name.ToLower())" -Value $functionName -Force
+        New-Item -Path Function:Global:$functionName -Value $functionCode
+        New-Alias -Name "goto-$($path.Name.ToLower())" -Value $functionName -Scope global -Force
+    }
 }
 
+CreateFunctionsAndAliases
