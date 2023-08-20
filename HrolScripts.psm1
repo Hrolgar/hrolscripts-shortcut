@@ -66,6 +66,17 @@ function HrolScripts {
 }
 
 function Initialize-HrolScripts {
+    if (!(Test-Path -Path $setupStatusFilePath)) {
+        # File doesn't exist yet, creating new one
+        New-Item -ItemType File -Path $setupStatusFilePath -Force
+        # Creating content for the setupStatusFilePath as a hashtable
+        $setupFileContent = @{
+            "InitCompleted" = $false
+            "SetupPaths"    = $null
+        }
+        # Converting the hashtable to JSON and writing it in the file
+        $setupFileContent | ConvertTo-Json | Set-Content -Path $setupStatusFilePath
+    }
     $content = Get-Content -Path $setupStatusFilePath | ConvertFrom-Json
     if ($null -eq $content.InitCompleted -or $content.InitCompleted -eq $false) {
         AddShortcut -fromInit $true
