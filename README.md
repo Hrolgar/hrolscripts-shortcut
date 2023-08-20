@@ -68,6 +68,7 @@ Detailed instructions for use. For instance:
 - `HrolScripts --help` to show the help message with all available commands.
 - `HrolScripts --list` to list all shortcuts.
 - `HrolScripts --edit` to edit a shortcut. You will be prompted for the name of the shortcut and the new path of the corresponding folder.
+- `HrolScripts --remove` to remove a shortcut. You will be prompted for the name of the shortcut.
 
 If you want to edit the configuration file manually, you can find it at `\User\AppData\Roaming\HrolScripts\hrolconfig.json`.
 

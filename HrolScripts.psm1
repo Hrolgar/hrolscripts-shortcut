@@ -26,6 +26,7 @@ function HrolScripts {
             Write-Host -ForegroundColor Green "  HrolScripts --add - Add a new shortcut."
             Write-Host -ForegroundColor Green "  HrolScripts --list - List all available shortcuts."
             Write-Host -ForegroundColor Green "  HrolScripts --edit - Edit an existing shortcut."
+            Write-Host -ForegroundColor Green "  HrolScripts --remove - Remove an existing shortcut."
             break
         }
         "--init" {
@@ -50,6 +51,10 @@ function HrolScripts {
         }
         "--edit" {
             EditShortcut
+            break
+        }
+        "--remove" {
+            RemoveShortcut
             break
         }
         default {
@@ -179,6 +184,43 @@ function EditShortcut {
     CreateFunctionsAndAliases
 }
 
+function RemoveShortcut {
+    $shortcutAlias = Read-Host "Enter the full name of the shortcut you want to delete, e.g. 'goto-ProjectName'"
+    if (![string]::IsNullOrWhiteSpace($shortcutAlias)) {
+        $shortcutName = $shortcutAlias.Replace('goto-', '')
+
+        if ($shortcutName -in $global:setupData.SetupPaths.psobject.Properties.Name) {
+
+            $confirm = Read-Host "Are you sure you want to remove the shortcut '$shortcutAlias'? (y/n)"
+            if ($confirm -eq "y") {
+                # Remove the old property by creating a new object without it
+                $newSetupPaths = New-Object PSObject
+
+                foreach ($prop in $global:setupData.SetupPaths.psobject.Properties) {
+                    if ($prop.Name -ne $shortcutName) {
+                        Add-Member -InputObject $newSetupPaths -Name $prop.Name -Value $prop.Value -MemberType NoteProperty -Force
+                    }
+                }
+
+                $global:setupData.SetupPaths = $newSetupPaths
+
+                # Save to persistent storage
+                $global:setupData | ConvertTo-Json -Depth 1 | Set-Content -Path $setupStatusFilePath -Force
+
+                # Update PowerShell session
+                Remove-Alias -Name "$shortcutAlias"
+
+                Write-Host -ForegroundColor Green "Shortcut '$shortcutAlias' has been removed."
+            }
+
+        } else {
+            Write-Host -ForegroundColor Red "Shortcut '$shortcutAlias' doesn't exist."
+        }
+    } else {
+        Write-Host -ForegroundColor Red "Shortcut name cannot be empty."
+    }
+}
+
 function goToProject {
     param(
         [string] $projectPath,
@@ -201,7 +243,6 @@ function goToProject {
 }
 
 function CreateFunctionsAndAliases {
-    Write-Host -ForegroundColor Yellow "Creating functions and aliases..."
     $setupPaths = $global:setupData.SetupPaths | ConvertTo-Json -Depth 99 -Compress | ConvertFrom-Json -AsHashtable
     foreach ($path in $setupPaths.GetEnumerator()) {
         $functionName = "GoTo" + $path.Name
