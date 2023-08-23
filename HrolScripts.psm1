@@ -1,4 +1,5 @@
 . $PSScriptRoot\functions\GoTo.ps1
+. $PSScriptRoot\functions\Git\GitSimplePush.ps1
 $setupStatusFilePath = Join-Path $env:APPDATA "HrolScripts\hrolconfig.json"
 
 function LoadSetupData {
