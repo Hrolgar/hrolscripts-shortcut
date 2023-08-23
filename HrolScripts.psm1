@@ -2,7 +2,7 @@
 $setupStatusFilePath = Join-Path $env:APPDATA "HrolScripts\hrolconfig.json"
 
 function LoadSetupData {
-    write-host "Loading setup data from $setupStatusFilePath"
+    # write-host "Loading setup data from $setupStatusFilePath"
     return Get-Content -Path $setupStatusFilePath | ConvertFrom-Json
 }
 
