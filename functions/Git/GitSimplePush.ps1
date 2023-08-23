@@ -1,29 +1,29 @@
-<#
-    .SYNOPSIS
-    Pushes the current branch to the remote repository.
-    .DESCRIPTION
-    Pushes the current branch to the remote repository.
-#>
-
 function GitSimplePush {
     [CmdletBinding()]
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory=$true, HelpMessage="Enter the commit message.")]
         [string]$CommitMessage
     )
 
-    $branch = git rev-parse --abbrev-ref HEAD
-    if ($CommitMessage -eq $null) {
-        throw "Commit message cannot be null."
-        return
-    }
-    $confirm = Read-Host "Are you sure you want to push $commitMessage with the commit message to $branch? (y/n)"
+    try {
+        $branch = git rev-parse --abbrev-ref HEAD
 
-    if ($confirm -eq "y") {
-        git commit -m $commitMessage
-        git push origin $branch
+        if ([string]::IsNullOrWhiteSpace($CommitMessage)) {
+            throw "Commit message cannot be empty."
+        }
+
+        $shortenedMessage = $CommitMessage.Substring(0, [Math]::Min(15, $CommitMessage.Length)) + "..."
+        $confirm = Read-Host "Are you sure you want to push the commit message '$shortenedMessage' to branch '$branch'? (y/n)"
+
+        if ($confirm -eq "y") {
+            git add .
+            git commit -m $CommitMessage
+            git push origin $branch
+            Write-Host "Changes pushed successfully."
+        } else {
+            Write-Host "Push operation aborted."
+        }
+    } catch {
+        Write-Host "An error occurred: $_"
     }
-    git add .
-    git commit -m $CommitMessage
-    git push origin $branch
 }
